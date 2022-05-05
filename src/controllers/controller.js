@@ -4,7 +4,8 @@ const internModel = require('../models/internModel')
 const ObjectId = mongoose.Types.ObjectId;
 const dv = /[a-zA-Z]/;   //string 
 const mob = /^\d{10}$/;   //mobile
-const evalid = /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,20}$/;  // for email
+const evalid = /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,20}$/;  // for email 
+
 const createColleges = async function (req, res) {
     try {
         let data = req.body
@@ -12,14 +13,13 @@ const createColleges = async function (req, res) {
         if (Object.keys(data).length == 0) {
             return res.status(400).send({ status: false, msg: 'Invalid Request !! Please Enter college Detail ' })
         }
-
         const { name, fullName, logoLink } = data
         // check that user is provide only string
         if ((name == 0) || !dv.test(name)) {
             return res.status(400).send({ status: false, msg: "please provide valid name of college" })
         }
         //  check if the intern is already registerd or not
-        let existingCollege = await collegeModel.findOne({name})
+        let existingCollege = await collegeModel.findOne({ name })
         if (existingCollege) {
             return res.status(400).send({ status: false, msg: "college is already exist" })
         }
@@ -32,8 +32,8 @@ const createColleges = async function (req, res) {
         let college = await collegeModel.create(data)
         return res.status(201).send({ msg: "Data created successfully", data: college })
 
-    } catch (error) {
-        return res.status(500).send({ err: error.message })
+    } catch (err) {
+        return res.status(500).send({ error: err.message })
     }
 }
 
@@ -44,21 +44,18 @@ const createInterns = async function (req, res) {
         if (Object.keys(data).length == 0) {
             return res.status(400).send({ status: false, msg: 'Invalid Request !! Please Enter intern Detail ' })
         }
-        
-        const { name, collegeName, email,mobile, collegeId } = data
+
+        const { name, email, mobile, collegeId } = data
         // check that user is provide only string
         if ((name == 0) || !dv.test(name)) {
             return res.status(400).send({ status: false, msg: "please provide name of intern" })
-        }
-        if ((collegeName == 0) || !dv.test(collegeName)) {
-            return res.status(400).send({ status: false, msg: "please provide name of college" })
         }
         // email validation using regex
         if ((email == 0) || !evalid.test(email)) {
             return res.status(400).send({ status: false, msg: "please provide a valid email" })
         }
         // checking email in database
-        existingemail = await internModel.findOne({ email:email })
+        existingemail = await internModel.findOne({ email: email })
         if (existingemail) {
             return res.status(400).send({ msg: "email is already exist" })
         }
@@ -86,10 +83,34 @@ const createInterns = async function (req, res) {
     catch (err) {
         return res.status(500).send({ error: err.message })
     }
-}
+};
 
+const collegeDetails = async function (req, res) {
+    try {
+        let query = req.query.collegeName
+        if (!query) {
+            return res.status(400).send({ status: false, msg: "please provise collage Name " })
+        }
+        let college = await collegeModel.findOne({ isDeleted: false, name: query })
+        if (!college) {
+            return res.status(400).send({ status: false, msg: "college not found" })
+        }
 
+        let id = college._id
+        let interns = await internModel.find({ collegeId: id, isDeleted: false }).select({ _id: 1, name: 1, email: 1, mobile: 1 })
+        if (interns.length == 0) {
+            return res.status(400).send({ status: false, msg: "no intern found for this college" })
+        }
+        let details = { name: college.name, fullName: college.fullName, logoLink: college.logoLink, interests: interns }
+        return res.status(200).send({ data: details });
+
+    }
+    catch (err) {
+        return res.status(500).send({ error: err.message })
+    }
+};
 
 module.exports.createColleges = createColleges
 module.exports.createInterns = createInterns
+module.exports.collegeDetails = collegeDetails
 

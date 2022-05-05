@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Schema.Types.ObjectId;
+
 const internSchema = new mongoose.Schema({
     name: {
         type: String,
-        unique: true,
-        required: true,
-        trim: true
+        trim: true,
+        required:true
     },
 
     email: {
@@ -30,8 +30,5 @@ const internSchema = new mongoose.Schema({
     }
 
 })
-
-
-
 
 module.exports = mongoose.model('Intern', internSchema) 
